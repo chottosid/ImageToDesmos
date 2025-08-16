@@ -7,14 +7,11 @@ def create_desmos_loader(input_file, output_file='desmos_loader.html'):
     :param input_file: Text file containing LaTeX equations
     :param output_file: Output HTML file to load equations in Desmos
     """
-    # Read the equations from the input file
     with open(input_file, 'r') as f:
         equations = f.readlines()
 
-    # Clean and prepare the equations
     clean_equations = [eq.strip() for eq in equations if eq.strip()]
 
-    # Create the HTML content with embedded JavaScript
     html_template = f"""
 <!DOCTYPE html>
 <html>
@@ -72,13 +69,11 @@ def create_desmos_loader(input_file, output_file='desmos_loader.html'):
 </html>
     """
 
-    # Write the HTML file
     with open(output_file, 'w') as f:
         f.write(html_template)
 
     print(f"Desmos loader HTML created at {output_file}")
     print("Open this HTML file in a web browser to automatically load equations into Desmos")
 
-# Example usage
 if __name__ == "__main__":
     create_desmos_loader('latex_equations.txt')
