@@ -35,6 +35,16 @@ def create_desmos_loader(input_file, output_file='desmos_loader.html'):
         // Current equation index
         var currentIndex = 0;
 
+        // Function to zoom to the proper section
+        function zoomToEquation(equation) {{
+            calculator.setMathBounds({{
+                left: -210, // Adjust these values as per your need
+                right: 910,
+                bottom: -40,
+                top: 500
+            }});
+        }}
+
         // Function to show equations one by one with a delay
         function showEquations() {{
             if (currentIndex < equations.length) {{
@@ -45,6 +55,7 @@ def create_desmos_loader(input_file, output_file='desmos_loader.html'):
                     color: 'black',  // Set all equations to blue (or any color you prefer)
                     lineWidth: 1  // Set line width to 2 (or any width you prefer)
                 }});
+                zoomToEquation(equations[currentIndex]);
                 currentIndex++;
                 setTimeout(showEquations, 1); // Adjust delay (1000ms = 1 second) as needed
             }} else {{

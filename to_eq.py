@@ -14,8 +14,8 @@ class ImageToDesmos:
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         ## Apply Gaussian blur to reduce noise
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-        ## Canny edge detection with adjusted thresholds
-        edges = cv2.Canny(gray, 120, 160)  # Edge detection
+        ## Canny edge detection
+        edges = cv2.Canny(gray, 80, 150)  # Edge detection
         return image, edges
 
     def extract_contours(self, edge_image):
@@ -136,9 +136,9 @@ if __name__ == "__main__":
     converter = ImageToDesmos()
 
     # Specify the image path and output files
-    image_path = "archi3.png"  # Replace with your image path
+    image_path = "jagannath.jpg"  # Replace with your image path
     output_file = "latex_equations.txt"
     contour_image_file = "contours.jpg"  # The output file for the contour image
 
     # Convert image to Desmos equations and save contour image
-    converter.convert_image_to_segments(image_path, segment_size=3, output_file=output_file, contour_image_file=contour_image_file)
+    converter.convert_image_to_segments(image_path, segment_size=7, output_file=output_file, contour_image_file=contour_image_file)
