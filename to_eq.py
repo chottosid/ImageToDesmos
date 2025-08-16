@@ -4,20 +4,15 @@ from scipy.optimize import minimize
 import desmos_loader
 import sys
 import os
+
 class ImageToDesmos:
     def preprocess_image(self, image_path):
-        """
-        Convert the image to grayscale and extract edges.
-        """
         image = cv2.imread(image_path, cv2.IMREAD_COLOR)
-        # rotate the image
         image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
         image = cv2.rotate(image, cv2.ROTATE_90_CLOCKWISE)
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        ## Apply Gaussian blur to reduce noise
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
-        ## Canny edge detection
-        edges = cv2.Canny(gray, 80, 150)  # Edge detection
+        edges = cv2.Canny(gray, 80, 150)
         return image, edges
 
     def extract_contours(self, edge_image):
@@ -32,13 +27,11 @@ class ImageToDesmos:
         return segments
 
     def fit_cubic_bezier_curve(self, segment):
-        segment = segment.reshape(-1, 2)  # Ensure the segment is in 2D form
+        segment = segment.reshape(-1, 2)
 
-        # Parameterize the input points with t values in [0, 1]
         N = len(segment)
         t_samples = np.linspace(0, 1, N)
 
-        # Bézier parametric equations
         def bezier(t, P0, P1, P2, P3):
             return (
                 (1-t)**3 * P0 +
@@ -47,7 +40,6 @@ class ImageToDesmos:
                 t**3 * P3
             )
 
-        # Error function to minimize
         def bezier_error(control_points):
             P0 = control_points[0:2]
             P1 = control_points[2:4]
@@ -60,14 +52,12 @@ class ImageToDesmos:
                 error += np.linalg.norm(bezier_point - target)**2
             return error
 
-        # Initial guess for control points
         P0 = segment[0]
         P3 = segment[-1]
         P1 = P0 + (P3 - P0) / 3
         P2 = P3 - (P3 - P0) / 3
         initial_guess = np.concatenate([P0, P1, P2, P3])
 
-        # Optimize control points
         result = minimize(bezier_error, initial_guess, method='BFGS')
         P0, P1, P2, P3 = result.x[0:2], result.x[2:4], result.x[4:6], result.x[6:8]
 
@@ -87,59 +77,42 @@ class ImageToDesmos:
             file.write("\n".join(equations))
 
     def convert_image_to_segments(self, image_path, segment_size=20, output_file="equations.txt", contour_image_file="contours.jpg"):
-        # Preprocess the image
         image, edge_image = self.preprocess_image(image_path)
-
-        # Extract contours
         contours = self.extract_contours(edge_image)
 
-        # Save the contours as an image
         contour_image = np.zeros_like(image)
         cv2.drawContours(contour_image, contours, -1, (255, 255, 255), 1)
         cv2.imwrite(contour_image_file, contour_image)
 
-        # Split contours into segments
         all_segments = []
         for contour in contours:
             segments = self.split_contour_into_segments(contour, segment_size)
             all_segments.extend(segments)
 
-        # Fit cubic Bézier curves to each segment
         bezier_curves = [self.fit_cubic_bezier_curve(s) for s in all_segments]
-
-        # Generate equations
         equations = self.generate_cubic_equations(bezier_curves)
-
-        # Save equations to file
         self.save_equations_to_file(equations, output_file)
 
-        print(f"Equations saved to {output_file}!")
+        print(f"Saved {len(equations)} equations to {output_file}")
 
-# Main script
 if __name__ == "__main__":
-    # Check if image path is provided as command line argument
     if len(sys.argv) != 2:
         print("Usage: python to_eq.py <image_path>")
-        print("Example: python to_eq.py jagannath.jpg")
         sys.exit(1)
     
     image_path = sys.argv[1]
     
-    # Check if the image file exists
     if not os.path.exists(image_path):
         print(f"Error: Image file '{image_path}' not found.")
         sys.exit(1)
     
-    # Generate output file names based on input image name
     image_name = os.path.splitext(os.path.basename(image_path))[0]
     output_file = f"{image_name}_equations.txt"
     contour_image_file = "contours.jpg"
     
     converter = ImageToDesmos()
-
-    # Convert image to Desmos equations and save contour image
     converter.convert_image_to_segments(image_path, segment_size=20, output_file=output_file, contour_image_file=contour_image_file)
     
     print(f"Image: {image_path}")
-    print(f"Equations saved to: {output_file}")
-    print(f"Contours image saved to: {contour_image_file}")
+    print(f"Equations: {output_file}")
+    print(f"Contours: {contour_image_file}")
