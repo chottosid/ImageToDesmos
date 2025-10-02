@@ -1,65 +1,38 @@
 import json
+import os
+from dotenv import load_dotenv
 
-def create_desmos_loader(input_file, output_file='desmos_loader.html'):
+def desmos_loader(input_file, output_file='desmos_loader.html', template_file='desmos_loader.html'):
+    # Load environment variables
+    load_dotenv()
+    
+    # Get API key from environment
+    api_key = os.getenv('DESMOS_API_KEY')
+    if not api_key:
+        raise ValueError("DESMOS_API_KEY not found in environment variables. Please check your .env file.")
+    
+    # Read equations from input file
     with open(input_file, 'r') as f:
         equations = f.readlines()
 
     clean_equations = [eq.strip() for eq in equations if eq.strip()]
 
-    html_template = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Desmos Equation Loader</title>
-    <script src="https://www.desmos.com/api/v1.10/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
-</head>
-<body>
-    <div id="calculator" style="width: 100%; height: 500px;"></div>
-    <button id="start-animation" style="margin-top: 10px;">Start Animation</button>
-    <script>
-        var elt = document.getElementById('calculator');
-        var calculator = Desmos.GraphingCalculator(elt);
+    # Read HTML template
+    with open(template_file, 'r') as f:
+        html_template = f.read()
+    
+    # Replace placeholders in template
+    html_content = html_template.replace('{{DESMOS_API_KEY}}', api_key)
+    html_content = html_content.replace('{{EQUATIONS_JSON}}', json.dumps(clean_equations))
 
-        var equations = {json.dumps(clean_equations)};
-        var currentIndex = 0;
-
-        function zoomToEquation() {{
-            calculator.setMathBounds({{
-                left: -210,
-                right: 910,
-                bottom: -40,
-                top: 500
-            }});
-        }}
-
-        function showEquations() {{
-            if (currentIndex < equations.length) {{
-                calculator.setExpression({{
-                    id: `eq_${{currentIndex}}`,
-                    latex: equations[currentIndex],
-                    hidden: false,
-                    color: 'black',
-                    lineWidth: 1
-                }});
-                currentIndex++;
-                setTimeout(showEquations, 1);
-            }}
-        }}
-
-        document.getElementById('start-animation').addEventListener('click', function() {{
-            zoomToEquation();
-            showEquations();
-        }});
-    </script>
-</body>
-</html>
-    """
-
+    # Write the final HTML file
     with open(output_file, 'w') as f:
-        f.write(html_template)
-
-    print(f"Created {output_file}")
-    print("Open this file in a browser to view the equations")
+        f.write(html_content)
 
 if __name__ == "__main__":
-    create_desmos_loader('latex_equations.txt')
+    try:
+        desmos_loader('durga_scaled_equations.txt', 'desmos_output.html')
+        print(f"Created desmos_output.html")
+        print("Open this file in a browser to view the equations")
+    except Exception as e:
+        print(f"Error: {e}")
